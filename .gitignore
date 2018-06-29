@@ -70,6 +70,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # pyenv
 .python-version
@@ -100,3 +101,21 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+#Exclude all temporary files
+*~
+*.swp
+*.swo
+
+#Exclude zip file
+*.zip
+
+# Exclude backup files 
+*.bk
+
+# Exclude Fits file
+*.fits
+
+# Exclude path to analysis results
+ImSimpy/analysis/region_ds9/
+ImSimpy/analysis/results/

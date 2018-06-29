@@ -1,0 +1,7 @@
+#!/bin/bash
+
+python ee.py airy_ideal_psfs/airy_1024_z atmosphere/moffat_1024_z_s04 psf_degradation/zemax_moffat_1024_z_edge_s04_z0 psf_degradation/zemax_moffat_1024_z_edge_s04_z10 psf_degradation/zemax_moffat_1024_z_edge_s04_z20 psf_degradation/zemax_moffat_1024_z_edge_s04_z30 psf_degradation/zemax_moffat_1024_z_edge_s04_z40 psf_degradation/zemax_moffat_1024_z_edge_s04_z50 psf_degradation/zemax_moffat_1024_z_edge_s04_z60 psf_degradation/zemax_moffat_1024_z_edge_s04_z70 psf_degradation/zemax_moffat_1024_z_edge_s04_z80 psf_degradation/zemax_moffat_1024_z_edge_s04_z90 psf_degradation/zemax_moffat_1024_z_edge_s04_z100 psf_degradation/zemax_moffat_1024_z_edge_s04_z200 psf_degradation/zemax_moffat_1024_z_edge_s04_z300 'Airy Moffat 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100% 200% 300%' 'z band / edge / seeing:0.4'
+
+
+#python ee.py airy_ideal_psfs/airy_1024_z psf_degradation/zemax_1024_z_edge_z0 psf_degradation/zemax_1024_z_edge_z10 psf_degradation/zemax_1024_z_edge_z20 psf_degradation/zemax_1024_z_edge_z30 psf_degradation/zemax_1024_z_edge_z40 psf_degradation/zemax_1024_z_edge_z50 psf_degradation/zemax_1024_z_edge_z60 psf_degradation/zemax_1024_z_edge_z70 psf_degradation/zemax_1024_z_edge_z80 psf_degradation/zemax_1024_z_edge_z90 psf_degradation/zemax_1024_z_edge_z100 psf_degradation/zemax_1024_z_edge_z200 psf_degradation/zemax_1024_z_edge_z300 'Airy 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100% 200% 300%' 'z edge no seeing'
+

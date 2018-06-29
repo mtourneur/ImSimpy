@@ -1,0 +1,3 @@
+global color=red dashlist=8 3 width=1
+image
+box(513,513,45,45,0) #text= {1 pixel}
