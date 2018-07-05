@@ -123,3 +123,6 @@ ImSimpy/analysis/results/
 # Exclude path to data generated during runs
 ImSimpy/data/catalog/
 ImSimpy/data/psf/
+
+# Exclude path to configfiles
+ImSimpy/data/configFiles/
