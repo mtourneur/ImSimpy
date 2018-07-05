@@ -125,4 +125,4 @@ ImSimpy/data/catalog/
 ImSimpy/data/psf/
 
 # Exclude path to configfiles
-ImSimpy/data/configFiles/
+ImSimpy/configFiles/
