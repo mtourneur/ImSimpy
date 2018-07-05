@@ -208,6 +208,64 @@ def Viziercatalog(RA,DEC,radius,band,wvl_eff,header,catalog="NOMAD-1",frame="icr
            #fh.write('%f %f %f %i %f \n' % (world[i,0], world[i,1], mags[i], 0, 0.0))
            fh.write('%f %f %f %i %f \n' % (pix[i,0], pix[i,1], mags[i], 0, 0.0))
 
+def PanstarrsCatalog(RA, DEC, rad_deg, band, wvl_eff, header,mindet=1, maxsources = 20000, frame="icrs", output='SourcesCatalog.txt', extrapolate=False, server=('https://archive.stsci.edu/panstarrs/search.php')):
+    """
+    Query Pan-STARRS DR1 @ MAST
+    parameters: RA, DEC, rad_deg: RA, Dec, field 
+                                          radius in degrees
+                mindet: minimum number of detection (optional)
+                maxsources: maximum number of sources
+                server: servername
+    returns: astropy.table object
+    """
+    import requests 
+    from astropy.io.votable import parse_single_table 
+    import astropy.units as u
+    import astropy.coordinates as coord
+    from astropy.wcs import WCS
+
+    # Create directory if not existing
+    os.makedirs(os.path.dirname(output),exist_ok=True)
+
+    r = requests.get(server, 
+    params= {'RA': RA, 'DEC': DEC, 
+             'SR': rad_deg, 'max_records': maxsources, 
+             'outputformat': 'VOTable', 
+             'ndetections': ('>%d' % mindet)}) 
+ 
+    # write query data into local file 
+    outf = open('panstarrs.xml', 'w') 
+    outf.write(r.text) 
+    outf.close() 
+ 
+    # parse local file into astropy.table object 
+    data = parse_single_table('panstarrs.xml')
+
+    data_table=data.to_table(use_names_over_ids=True) 
+
+    mags = data_table['%sMeanApMag' % band]
+
+    c = coord.SkyCoord(data_table['raMean'], data_table['decMean'], unit=(u.deg, u.deg),frame=frame)
+    w = WCS(header)
+    world = np.array([c.ra.deg, c.dec.deg]).T
+    #world = np.array([[RA,DEC ]])
+   
+    pix = w.all_world2pix(world,1) # Pixel coordinates of (RA, DEC)
+    #print ("Pixel Coordinates: ", pix[0,0], pix[0,1])
+
+    fh = open(output, 'w')
+    fh.write('#   1 X                Object position along x                                    [pixel]\n')
+    fh.write('#   2 Y                Object position along y                                    [pixel]\n')
+    fh.write('#   3 MAG              Object magnitude                                           [AB]\n')
+    fh.write('#   4 TYPE             Object type                                                [0=star, others=FITS]\n')
+    fh.write('#   5 ORIENTATION      Objects orientation                                        [deg]\n')
+
+
+    for i in range(len(pix[:,0])):
+        if (np.isfinite(mags[i])) & (mags[i] > 0):
+            #fh.write('%f %f %f %i %f \n' % (world[i,0], world[i,1], mags[i], 0, 0.0))
+            fh.write('%f %f %f %i %f \n' % (pix[i,0], pix[i,1], mags[i], 0, 0.0))
+
 
 if __name__ == '__main__':
 

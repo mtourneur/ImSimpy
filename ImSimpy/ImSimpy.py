@@ -22,15 +22,11 @@ from scipy import ndimage
 from astropy.io import fits
 import numpy as np
 import numexpr as ne
-from IS.utils.generateCalib import DarkCurrent
-from IS.utils import PSFUtils
+from ImSimpy.utils.generateCalib import DarkCurrent
+from ImSimpy.utils import PSFUtils
 from scipy.signal import fftconvolve
 
 convolution = fftconvolve
-
-__author__ = 'David Corre'
-__version__ = 0.1.0
-
 
 class ImageSimulator():
     """
@@ -38,7 +34,7 @@ class ImageSimulator():
 
     """
 
-    def __init__(self, path=os.getenv('ImSimpy_DIR')+'/IS',configFile=os.getenv('ImSimpy_DIR')+'/ImSimpy/configFiles/default_input.hjson',name_telescope='default',seed=None, debug=False,random=False):
+    def __init__(self, path=os.getenv('ImSimpy_DIR')+'/ImSimpy',configFile=os.getenv('ImSimpy_DIR')+'/ImSimpy/configFiles/default_input.hjson',name_telescope='default',seed=None, debug=False,random=False):
         """
         Class Constructor.
 
@@ -78,8 +74,7 @@ class ImageSimulator():
                                      sky_brightness=19.3,
                                      RA=123.0,
                                      DEC=45.0,
-                                     mode='same',
-                                     version=__version__))
+                                     mode='same'))
 
 
     def readConfigs(self):
@@ -94,7 +89,7 @@ class ImageSimulator():
         """ Execute the Exposure Time Calculator to get some information (zeropoint, grb mag,...) """
 
         try:
-           from ETC.etc import etc
+           from pyETC.pyETC import etc
         except ValueError:
            print ('Package ETC not found, you have to install it')
         if config_type =='file': etc_info=etc(configFile=self.configfile, config_type=config_type,name_telescope=self.name_telescope)
@@ -130,7 +125,7 @@ class ImageSimulator():
         self.config['seeing']=etc_info.information['seeing_los_arcsec']
         self.config['camera']=etc_info.information['channel']
         self.config['sky_site']=etc_info.information['sky_site']
-        self.config['verbose']=etc_info.information['verbose']
+        self.config['verbose']=str(etc_info.information['verbose'])
 
         if self.config['object_type'] == 'grb_sim': self.config['grb_mag']=etc_info.information['mag']
 
@@ -297,7 +292,7 @@ class ImageSimulator():
        self.fits_header['CDELT2'] = self.config['pixelScale_Y'] / 3600.
        self.fits_header['CROTA2'] = 0.0
        self.fits_header['DATE-OBS'] = datetime.datetime.isoformat(datetime.datetime.now())
-       self.fits_header['INSTRUME'] = 'GFT-IS%s' % str(__version__)
+       self.fits_header['INSTRUME'] = 'ImSimpy' 
 
 
        #create a new FITS file, using HDUList instance
@@ -327,8 +322,7 @@ class ImageSimulator():
            hdu.header.set(key.upper(), str(value), 'Boolean Flags')
 
        hdu.header.add_history('If questions, please contact David Corre (david.corre at lam.fr).')
-       hdu.header.add_history('Created by ImageSimulator (version=%.2f) at %s' % (__version__,
-                                                                           datetime.datetime.isoformat(datetime.datetime.now())))
+       hdu.header.add_history('Created by ImSimpy at %s' % datetime.datetime.isoformat(datetime.datetime.now()))
        hdu.verify('fix')
 
        # Create directory if not existing
@@ -520,8 +514,7 @@ class ImageSimulator():
 
         #update and verify the header
         hdu.header.add_history('This is an intermediate data product no the final output!')
-        hdu.header.add_history('Created by ImageSimulator (version=%.2f) at %s' % (__version__,
-                                                                           datetime.datetime.isoformat(datetime.datetime.now())))
+        hdu.header.add_history('Created by ImSimpy at %s' % (                                                                           datetime.datetime.isoformat(datetime.datetime.now())))
         hdu.verify('fix')
 
         #hdulist.append(hdu)
@@ -545,17 +538,17 @@ class ImageSimulator():
 
     def generateObjectList(self):
        """ Generate object to simulate """
-       
+
        if 'generate' in self.config['SourcesList']:
-           from IS.utils.createCatalogue import  Viziercatalog
            from astropy.io import fits
+
            if 'output' in self.information['SourcesList']['generate']:
                output=self.path+'/data/catalog/'+self.information['SourcesList']['generate']['output']
-           else: 
+           else:
                output=self.path+'/data/catalog/SourcesCatalog.txt'
            if 'frame' in self.information['SourcesList']['generate']:
                frame=self.information['SourcesList']['generate']['frame']
-           else: 
+           else:
                frame='icrs'
            if 'band' in self.information['SourcesList']['generate']:
                band = self.information['SourcesList']['generate']['band']
@@ -567,15 +560,20 @@ class ImageSimulator():
            radius=self.information['SourcesList']['generate']['radius']
            _header=fits.open(self.path+'/images/'+self.information['output'])
            header=_header['PRIMARY'].header
-           
-           Viziercatalog(RA,DEC,radius,band,self.config['eff_wvl'],header,catalog=self.information['SourcesList']['generate']['catalog'],frame=frame,output=output) 
+
+           if self.information['SourcesList']['generate']['catalog'] == 'Panstarrs':
+               print ('Downloading objects from Pansstars catalog')
+               from ImSimpy.utils.createCatalogue import  PanstarrsCatalog
+               PanstarrsCatalog(RA, DEC, radius, band, self.config['eff_wvl'], header, frame=frame, output=output)
+           else:
+               from ImSimpy.utils.createCatalogue import  Viziercatalog
+               print ('Downloading objects from Vizier')
+               Viziercatalog(RA, DEC, radius, band, self.config['eff_wvl'], header, catalog=self.information['SourcesList']['generate']['catalog'], frame=frame, output=output)
            self.objects = np.loadtxt(output)
 
        elif "file" in self.config['SourcesList']:
            self.objects = np.loadtxt(self.path+'/data/catalog/'+self.information['SourcesList']['file'])
 
-       #discard nan
-       #self.objects[]
 
     def readObjectlist(self):
         """
@@ -748,7 +746,7 @@ class ImageSimulator():
            #PSFUtils.convolvePSF(filename1=PSF['instrument'],filename2=PSF['atmosphere'],filename3=self.path+self.information['PSF']['total']['output']+'_oversampled')
            #PSFUtils.resize(filename1=self.path+self.information['PSF']['total']['output']+'_oversampled',filename2=self.path+self.information['PSF']['total']['output'],resampling=32/self.information['psfoversampling'],type='sum')
            #PSFUtils.resize(filename1=self.path+self.information['PSF']['total']['output']+'_oversampled',filename2=self.path+self.information['PSF']['total']['output'],resampling=self.information['psfoversampling']/32,type='zoom')
-           print ('end PSF convolution')
+           print ('done')
 
     def readPSFs(self):
         """
@@ -1150,18 +1148,18 @@ class ImageSimulator():
         #print (self.information)
         if self.addsources:
             #if self.config['verbose'] == 'True': print ("Read objecct list")
-            print ("\tRead objecct list")
+            print ("\tGENERATE OBJECTS CATALOG")
             self.generateObjectList()
             self.readObjectlist()
         
             #if self.config['verbose'] == 'True': print ("Generate PSF")
-            print ("\tGenerate PSF")
+            print ("\tGENERATE PSF")
             self.generatePSF()
             self.readPSFs()
             self.generateFinemaps()
        
             #if self.config['verbose'] == 'True': print ("Add objects")
-            print ("\tAdd objects")
+            print ("\tADD OBJECTS")
             self.addObjects()
 
         if self.shotNoise:
