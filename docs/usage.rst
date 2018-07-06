@@ -2,6 +2,5 @@
 Usage
 =====
 
-To use ImSimpy in a project::
+To be done. In the meantime you have a look to the jupyter notebooks on the github.
 
-    import ImSimpy

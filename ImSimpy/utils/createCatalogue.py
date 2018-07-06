@@ -67,11 +67,11 @@ def SED_calibration(catalog):
        # Define effective wavelength and F0 flux (for which m=0)
        catalog_wvl_eff=np.array([0.43,0.55,0.7,1.26,1.60,2.22])*1e4  # microns --> angstroms
        catalog_F0=np.array([4130,3781,2941,1594,1024,666.7])     # Jy
-   if catalog == "USNO-A2":
+   elif catalog == "USNO-A2":
        # Define effective wavelength and F0 flux (for which m=0)
        catalog_wvl_eff=np.array([0.43,0.7])*1e4  # microns --> angstroms
        catalog_F0=np.array([4130,2941])     # Jy   
-   if catalog == "II/246":
+   elif catalog == "II/246":
        # 2MASS catalog
        # Define effective wavelength and F0 flux (for which m=0)
        catalog_wvl_eff=np.array([1.26,1.60,2.22])*1e4  # microns --> angstroms
@@ -107,7 +107,7 @@ def Viziercatalog(RA,DEC,radius,band,wvl_eff,header,catalog="NOMAD-1",frame="icr
    v.ROW_LIMIT =-1
    #result = v.query_region(coord.SkyCoord(ra=RA, dec=DEC, unit=(u.deg, u.deg), frame=frame),radius=radius*u.arcmin)
    result = v.query_region(coord.SkyCoord(ra=RA, dec=DEC, unit=(u.deg, u.deg), frame=frame),width=[radius*u.arcmin,radius*u.arcmin])
-
+   #print (result)
    c = coord.SkyCoord(result[0]['RAJ2000'], result[0]['DEJ2000'], unit=(u.deg, u.deg),frame=frame)
        
    w = WCS(header)
@@ -208,7 +208,7 @@ def Viziercatalog(RA,DEC,radius,band,wvl_eff,header,catalog="NOMAD-1",frame="icr
            #fh.write('%f %f %f %i %f \n' % (world[i,0], world[i,1], mags[i], 0, 0.0))
            fh.write('%f %f %f %i %f \n' % (pix[i,0], pix[i,1], mags[i], 0, 0.0))
 
-def PanstarrsCatalog(RA, DEC, rad_deg, band, wvl_eff, header,mindet=1, maxsources = 20000, frame="icrs", output='SourcesCatalog.txt', extrapolate=False, server=('https://archive.stsci.edu/panstarrs/search.php')):
+def PanstarrsCatalog(RA, DEC, rad_deg, band, wvl_eff, header,mindet=1, maxsources = 50000, frame="icrs", output='SourcesCatalog.txt', extrapolate=False, server=('https://archive.stsci.edu/panstarrs/search.php')):
     """
     Query Pan-STARRS DR1 @ MAST
     parameters: RA, DEC, rad_deg: RA, Dec, field 

@@ -11,9 +11,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
+# cython is required for scikit-image
+# pytest is required for astroquery
 requirements = ['Click>=6.0', 'numpy', 'scipy', 'matplotlib', 'astropy',
                 'jupyter', 'numexpr', 'scikit-image', 'hjson',
-                'astroquery==0.3.5', 'pyregion', 'cython']
+                'astroquery==0.3.5', 'pyregion', 'cython', 'pytest']
 
 setup_requirements = ['pytest-runner']
 

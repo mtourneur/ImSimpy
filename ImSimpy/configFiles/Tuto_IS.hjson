@@ -106,7 +106,7 @@
 
 #Coordinate of the GRB on the detector ("pixels" or "RADEC")
 "grb_coord_type": RADEC
-"grb_coords": [152.4,5]
+"grb_coords": [266.41683333,29.007825]
 
 
 #-------- Host galaxy extinction ------------------#
@@ -127,11 +127,22 @@
 ########### IMAGE SIMULATOR #####################
 
 #input sources 
+#"SourcesList": {
+#  "generate": {
+#       "RA": 266.41683333
+#       "DEC": 29.007825
+#       "radius": 0.25
+#       "catalog": Panstarrs
+#       "frame": icrs
+#       "band": r
+#       "output": Tuto_IS/SourcesCatalog_r.txt
+#   }
+#}
+
 "SourcesList": {
-  "file": "Sources_Tuto_IS.txt"
+  "file": "Tuto_IS/SourcesCatalog_r.txt"
 }
 
-#"SourcesList": {"file": /data/catalog/grb170202a_magR.txt}
 
 "PSF": {
    "atmosphere": {
@@ -163,8 +174,8 @@
 "output" : Tuto_IS/image_tuto_IS.fits
 
 #Position of the reference pixel
-"RA" : 152.61162 
-"DEC" : 4.991116
+"RA" : 266.41683333 
+"DEC" : 29.007825
 
 #Control flags (can be yes/no, true/false, 1/0)
 #----- Compulsory ones ------
@@ -176,8 +187,8 @@
 
 #add cosmetics?
 "cosmetics" : no
-"DeadPixFile" : DeadPixs_nir.fits
-"HotPixFile" : HotPixs_nir.fits
+"DeadPixFile" : DeadPixs_vis.fits
+"HotPixFile" : HotPixs_vis.fits
 
 #add cosmic rays?
 "cosmicRays" : no
@@ -200,15 +211,15 @@
 
 #convert to ADU
 "ADU": no
-"GainMapFile": Gain_nir.fits
+"GainMapFile": Gain_vis.fits
 
 #Flat
 "Vignetting": no
-"VignettingFile": Vignetting_nir.fits
+"VignettingFile": Vignetting_vis.fits
 
 #Offset
 "Offset": no
-"OffsetFile": Offset_nir.fits
+"OffsetFile": Offset_vis.fits
 
 
 } 

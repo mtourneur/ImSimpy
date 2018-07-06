@@ -562,7 +562,7 @@ class ImageSimulator():
            header=_header['PRIMARY'].header
 
            if self.information['SourcesList']['generate']['catalog'] == 'Panstarrs':
-               print ('Downloading objects from Pansstars catalog')
+               print ('Downloading objects from Panstarrs catalog')
                from ImSimpy.utils.createCatalogue import  PanstarrsCatalog
                PanstarrsCatalog(RA, DEC, radius, band, self.config['eff_wvl'], header, frame=frame, output=output)
            else:
