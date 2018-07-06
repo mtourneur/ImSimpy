@@ -14,7 +14,7 @@ You must have already installed the following packages on your computer:
 - pyGRBaglow (if you want to simulate GRB afterglows)
 - pyETC
 
-`pyETC`_ and `pyGRBaglow`_ can be found on their github repositories.
+`pyETC`_ and `pyGRBaglow`_ can be found on their github repositories. Install pyGRBaglow before pyETC.
 
 .. _pyETC: https://github.com/dcorre/pyETC
 .. _pyGRBaglow: https://github.com/dcorre/pyGRBaglow
