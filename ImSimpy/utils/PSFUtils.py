@@ -37,7 +37,6 @@ def plotPSF_EE():
     band_vis=['g','r','i','z','y']
     band_nir=['J','H']
 
-
     #Wavelength
     eff_wvl={'g':480,'r':620.5,'i':760,'z':867.4,'y':1002.4,'J':1254,'H':1636.8}  #nm
     wvl= eff_wvl[band]   #nm
@@ -177,7 +176,7 @@ def createPSF(filename='moffat_1024_J_s50.fits',PSF_type='moffat',imsize=[1025,1
     if PSF_type == 'moffat': Z=I_moffat(r,seeing_fwhm)
     elif PSF_type == 'airy': Z=I_airy(r*np.pi/(eff_wvl * N ),obs)
     elif PSF_type == 'gaussian': Z=I_gauss(r,sigma_gaussian_atm)
-    
+
     Z2=_resize_sum(Z,oversamp2)
 
     if disp:

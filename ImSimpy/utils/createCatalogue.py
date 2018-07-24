@@ -223,7 +223,7 @@ def PanstarrsCatalog(RA, DEC, rad_deg, band, wvl_eff, header,mindet=1, maxsource
     import astropy.units as u
     import astropy.coordinates as coord
     from astropy.wcs import WCS
-
+    
     # Create directory if not existing
     os.makedirs(os.path.dirname(output),exist_ok=True)
 
