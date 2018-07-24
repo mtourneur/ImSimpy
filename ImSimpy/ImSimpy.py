@@ -127,7 +127,8 @@ class ImageSimulator():
         self.config['sky_site']=etc_info.information['sky_site']
         self.config['verbose']=str(etc_info.information['verbose'])
 
-        if self.config['object_type'] == 'grb_sim': self.config['grb_mag']=etc_info.information['mag']
+        if self.config['object_type'] == 'grb_sim':
+            self.config['grb_mag']=etc_info.information['mag']
 
     def processConfigs(self):
         """
@@ -329,7 +330,7 @@ class ImageSimulator():
        os.makedirs(os.path.dirname(self.path+'/images/'+self.information['output']),exist_ok=True)
        
        #write the actual file
-       hdu.writeto(self.path +'/images/'+self.information['output'],overwrite=True)
+       #hdu.writeto(self.path +'/images/'+self.information['output'],overwrite=True)
        #print (hdu.header)
        self.hdu_header=hdu.header
 
@@ -657,7 +658,7 @@ class ImageSimulator():
                                 ratio=float(header['PIXSIZE1']/(self.information['xPixSize']*1e6))
                                 print ('ratio finemaps: %.2f' % ratio)
                                 d2=scipy.ndimage.zoom(d/d.sum(), ratio, order=3)
-                                d2[d2<1e-5]=0
+                                d2[d2<1e-6]=0
                                 if np.sum(d2) != 1: d2=d2/np.sum(d2)
                                 image_size=d2.shape
                                 #Assume same size horizontally and vertically
@@ -1120,16 +1121,17 @@ class ImageSimulator():
  
         
         #create a new FITS file, using HDUList instance
-        #hdu=fits.PrimaryHDU()
+        hdu=fits.PrimaryHDU()
         
-        hdu=fits.open(self.path + '/images/'+self.information['output'])
+        #hdu=fits.open(self.path + '/images/'+self.information['output'])
 
         #new image HDU
         #float 32 bits
         #hdu['PRIMARY'].data=self.image.astype(np.float32)
         # UNsigned Integer 16 bits (0 to 65535)
-        hdu['PRIMARY'].data=self.image.astype(np.uint16)
-        
+        hdu.data=self.image.astype(np.uint16)
+        hdu.header=self.hdu_header
+
         #write the actual file. Path should exists, already checked while creating the headers.
         hdu.writeto(self.path + '/images/'+self.information['output'],overwrite=True)
 
