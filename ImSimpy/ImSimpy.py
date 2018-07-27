@@ -559,17 +559,17 @@ class ImageSimulator():
            RA=self.information['SourcesList']['generate']['RA']
            DEC=self.information['SourcesList']['generate']['DEC']
            radius=self.information['SourcesList']['generate']['radius']
-           _header=fits.open(self.path+'/images/'+self.information['output'])
-           header=_header['PRIMARY'].header
+           #_header=fits.open(self.path+'/images/'+self.information['output'])
+           #header=_header['PRIMARY'].header
 
            if self.information['SourcesList']['generate']['catalog'] == 'Panstarrs':
                print ('Downloading objects from Panstarrs catalog')
                from ImSimpy.utils.createCatalogue import  PanstarrsCatalog
-               PanstarrsCatalog(RA, DEC, radius, band, self.config['eff_wvl'], header, frame=frame, output=output)
+               PanstarrsCatalog(RA, DEC, radius, band, self.config['eff_wvl'], self.hdu_header, frame=frame, output=output)
            else:
                from ImSimpy.utils.createCatalogue import  Viziercatalog
                print ('Downloading objects from Vizier')
-               Viziercatalog(RA, DEC, radius, band, self.config['eff_wvl'], header, catalog=self.information['SourcesList']['generate']['catalog'], frame=frame, output=output)
+               Viziercatalog(RA, DEC, radius, band, self.config['eff_wvl'], self.hdu_header, catalog=self.information['SourcesList']['generate']['catalog'], frame=frame, output=output)
            self.objects = np.loadtxt(output)
 
        elif "file" in self.config['SourcesList']:
@@ -608,9 +608,10 @@ class ImageSimulator():
                from astropy.wcs import WCS
                
                c = coord.SkyCoord(self.config['grb_coords'][0], self.config['grb_coords'][1], unit=(u.deg, u.deg),frame='icrs')
-               _header=fits.open(self.path + '/images/' +self.information['output'])
-               header=_header['PRIMARY'].header
-               w = WCS(header)
+               #_header=fits.open(self.path + '/images/' +self.information['output'])
+               #header=_header['PRIMARY'].header
+               
+               w = WCS(self.hdu_header)
                world = np.array([[c.ra.deg, c.dec.deg]])
                #print (world)
                pix = w.all_world2pix(world,1)
