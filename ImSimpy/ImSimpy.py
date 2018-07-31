@@ -1100,6 +1100,14 @@ class ImageSimulator():
                         sum += overload
 
 
+    def applyInterpixCrosstalk(self):
+        """
+        Apply interpixel crosstalk coefficients to the image with a convolution
+        """
+        ICTcoeff = np.array([[self.information['c1'], self.information['c2'],self.information['c3']],[self.information['c4'],self.information['c5'],self.information['c6']],[self.information['c7'],self.information['c8'],self.information['c9']]])
+        self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+
+
     def discretise(self):
         """
         Converts a floating point image array (self.image) to an integer array with max values
@@ -1116,6 +1124,7 @@ class ImageSimulator():
         self.image[self.image > max] = max
 
         self.image = np.rint(self.image).astype(np.int)
+
 
     def writeOutputs(self):
         """
