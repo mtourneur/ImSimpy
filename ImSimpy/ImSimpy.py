@@ -339,8 +339,13 @@ class ImageSimulator():
         """
         Creates and empty array of a given x and y size full of zeros.
         """
-        self.image = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
-
+        self.image_total = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
+       
+        #reference pixel case management
+        if self.information['NrefPix_x']==0 or self.information['NrefPix_y'] == 0 :
+            self.image = self.image_total
+        else:
+            self.image = self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
 
 
     def objectOnDetector(self, object):
@@ -956,16 +961,18 @@ class ImageSimulator():
 
     def applyDarkCurrent(self):
         """
-        Apply dark current. Scales the dark with the exposure time.
-
+        Apply dark current. Scales the dark with the exposure time. Apply on reference pixel.
         """
         filename_DC=self.path+'/data/DarkCurrent/'+'DarkCurrent_'+self.information['camera']+'.fits'
         DarkCurrent(filename=filename_DC,Type='gaussian',mean=self.information['DC'],xsize=self.information['xsize'],ysize=self.information['ysize'],texp=self.information['exptime'])
 
         DC=fits.getdata(filename_DC)
-        #add dark to image
-        self.image+=DC
-
+        
+        #add dark to image and reference pixels
+        if self.information['NrefPix_x'] == 0 or self.information['NrefPix_y'] == 0 :
+            self.image+=DC
+        else:
+            self.image_total+=DC
 
 
     def applySkyBackground(self):
