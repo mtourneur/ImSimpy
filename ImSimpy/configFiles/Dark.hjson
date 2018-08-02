@@ -112,6 +112,9 @@
 #add sky background?
 "background" : no
 
+#apply interpixel crosstalk?
+"interpixCrosstalk" : yes
+
 #apply bleeding effect?
 "bleeding" : yes
 
