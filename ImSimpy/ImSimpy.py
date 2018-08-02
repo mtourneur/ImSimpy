@@ -1105,7 +1105,11 @@ class ImageSimulator():
         Apply interpixel crosstalk coefficients to the image with a convolution
         """
         ICTcoeff = np.array([[self.information['c1'], self.information['c2'],self.information['c3']],[self.information['c4'],self.information['c5'],self.information['c6']],[self.information['c7'],self.information['c8'],self.information['c9']]])
-        self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+                #add dark to image and reference pixels
+        if self.information['NrefPix_x'] == 0 or self.information['NrefPix_y'] == 0 :
+            self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+        else:
+            self.image_total = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
 
 
     def discretise(self):
@@ -1240,6 +1244,11 @@ class ImageSimulator():
             #if self.config['verbose'] == 'True': print ("electrons2adu")
             print ("\telectrons2adu")
             self.electrons2ADU()
+
+        if self.interpixCrosstalk:
+            #if self.config['verbose'] == 'True': print ("electrons2adu")
+            print ("\tApply Interpixel Crosstalk")
+            self.applyInterpixCrosstalk()
 
         if self.Offset:
             #if self.config['verbose'] == 'True': print ("Add offset")
