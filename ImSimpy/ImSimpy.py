@@ -105,6 +105,15 @@ class ImageSimulator():
         self.config['bits']=etc_info.information['cameras'][etc_info.information['channel']]['bits']
         self.config['xsize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_X']
         self.config['ysize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_Y']
+        self.config['c1']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c2']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c3']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c4']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c5']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c6']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c7']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c8']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c9']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
         self.config['xPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeX']*etc_info.information['binning_X']
         self.config['yPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeY']*etc_info.information['binning_Y']
         self.config['dig_noise']=etc_info.information['dig_noise']
@@ -211,6 +220,12 @@ class ImageSimulator():
         except:
             self.ADU = False
         try:
+            val=self.config['interpixCrosstalk']
+            if val.lower() == 'yes': self.interpixCrosstalk = True
+            else: self.interpixCrosstalk = False
+        except:
+            self.interpixCrosstalk = True
+        try:
             val=self.config['Offset']
             if val.lower() == 'yes': self.Offset = True
             else: self.Offset = False
@@ -238,6 +253,7 @@ class ImageSimulator():
                              nonLinearity=self.nonlinearity,
                              Vignetting=self.Vignetting,
                              ADU=self.ADU,
+                             interpixCrosstalk=self.interpixCrosstalk,
                              Offset=self.Offset,
                              intscale=self.intscale,
                              shutterOpen=self.shutterOpen)
@@ -342,10 +358,10 @@ class ImageSimulator():
         self.image_total = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
        
         #reference pixel case management
-        if self.information['NrefPix_x']==0 or self.information['NrefPix_y'] == 0 :
-            self.image = self.image_total
-        else:
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
             self.image = self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+        else:
+            self.image = self.image_total
 
 
     def objectOnDetector(self, object):
@@ -968,8 +984,8 @@ class ImageSimulator():
 
         DC=fits.getdata(filename_DC)
         
-        #add dark to image and reference pixels
-        if self.information['NrefPix_x'] == 0 or self.information['NrefPix_y'] == 0 :
+        #add dark current to the image and reference pixels if there are any.
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
             self.image+=DC
         else:
             self.image_total+=DC
@@ -1105,8 +1121,8 @@ class ImageSimulator():
         Apply interpixel crosstalk coefficients to the image with a convolution
         """
         ICTcoeff = np.array([[self.information['c1'], self.information['c2'],self.information['c3']],[self.information['c4'],self.information['c5'],self.information['c6']],[self.information['c7'],self.information['c8'],self.information['c9']]])
-                #add dark to image and reference pixels
-        if self.information['NrefPix_x'] == 0 or self.information['NrefPix_y'] == 0 :
+        #add dark to image and reference pixels
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
             self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
         else:
             self.image_total = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
@@ -1246,7 +1262,7 @@ class ImageSimulator():
             self.electrons2ADU()
 
         if self.interpixCrosstalk:
-            #if self.config['verbose'] == 'True': print ("electrons2adu")
+            #if self.config['verbose'] == 'True': print ("Apply Interpixel Crosstalk")
             print ("\tApply Interpixel Crosstalk")
             self.applyInterpixCrosstalk()
 
