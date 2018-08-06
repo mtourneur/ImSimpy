@@ -147,7 +147,7 @@ class ImageSimulator():
             self.information['ysize']=self.information['ImageResized'][1]
 
         #name of the output file, include CCDs
-        #self.information['output'] = '{%s}'.format(self.infor)
+        self.information['output']=self.configfile[68:len(self.configfile)-6] + ".fits"
 
         #booleans to control the flow
         if self.config['shotNoise'].lower() == 'yes': self.shotNoise = True
@@ -945,7 +945,7 @@ class ImageSimulator():
 
     def applyVignetting(self):
         """ Add vignetting  """
-        vignetting=fits.getdata(self.path+'/data/Vignetting/'+self.information['VignettingFile'])
+        vignetting=fits.getdata(self.path+'/data/Vignetting/Calibration/colibri')
         self.image*=vignetting
 
 
