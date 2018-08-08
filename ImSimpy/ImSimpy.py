@@ -147,7 +147,7 @@ class ImageSimulator():
             self.information['ysize']=self.information['ImageResized'][1]
 
         #name of the output file, include CCDs
-        self.information['output']=self.configfile[68:len(self.configfile)-6] + ".fits"
+        #self.information['output']=self.configfile[68:len(self.configfile)-6] + ".fits"
 
         #booleans to control the flow
         if self.config['shotNoise'].lower() == 'yes': self.shotNoise = True
@@ -985,6 +985,18 @@ class ImageSimulator():
         #self.image += bcgr + np.sqrt(np.random.poisson(bcgr),size=self.image.shape)
         sky_image = np.random.poisson(bcgr,size=self.image.shape).astype(np.float64)
         self.image += sky_image
+        
+        
+    def applyRampSkyBackground(self):
+        """
+        Apply dark the sky background for a ramp. Scales the background with the exposure time.
+
+        Additionally saves the image without noise to a FITS file.
+        """
+        sky_back_el=self.information['Sky_CountRate']
+        bcgr = 1.475 * sky_back_el
+        sky_image = np.random.poisson(bcgr,size=self.image.shape).astype(np.float64)
+        self.image += sky_image
 
         
 
@@ -1146,7 +1158,9 @@ class ImageSimulator():
         """
         #if self.config['verbose'] == 'True': print ("Read config file and execute ETC")
         print ("Read config file and execute ETC")
+        #self.information['output']=
         self.configure(config_type)
+        self.information['output']=self.nom + ".fits"
         print ("Building image: %s:" % self.information['output'])
         #print (self.information)
         if self.addsources:
@@ -1238,7 +1252,104 @@ class ImageSimulator():
         #if self.config['verbose'] == 'True': print ("Write outputs")
         print ("\tWrite outputs")
         self.writeOutputs()
+        
+       
+        
+    def Rampsimulation(self,config_type='file' ):
+        #nImage, output_dir,band
+        """
+        Create a ramp simulated images defined by the configuration file.
+        Will do all steps defined in the config file sequentially.
 
+        :return: None
+        """
+        time=0
+        self.config['exptime'] = time
+
+        # Set input catalogue of sources
+        #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
+        self.nom = '/'+ self.output_dir + '/Reset'
+        
+        self.simulate('data') 
+        
+        tabImages=[self.image]
+        """
+        if self.readoutNoise:  #Vérifier qu'il n'est pas appliqué à tabImages[self.image]
+            #if self.config['verbose'] == 'True': print ("Add Readout Noise")
+            print ("\tAdd Readout Noise")
+            self.applyReadoutNoise()
+        """
+        for i in range(1,self.nbImages+1):
+            
+            time = i * 1.475
+            # Set the exposure time
+            self.config['exptime'] = time
+
+            # Set input catalogue of sources
+            #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
+            
+            #if self.config['verbose'] == 'True': print ("Read config file and execute ETC")
+            print ("Read config file and execute ETC")
+            self.configure(config_type)            
+                        
+            # Set name of output fits file
+            self.information['output']='%s/image_%s_%s.fits' % (self.output_dir,self.config['filter_band'],i)
+            print ("Building image nb %s: %s:" % (i,self.information['output']))
+            
+            self.image+=tabImages[i-1]
+            
+            # If there is vignetting, I have 
+            if self.Vignetting:
+                #if self.config['verbose'] == 'True': print ("Add Vignetting")
+                vignetting=fits.getdata(self.path+'/data/Vignetting/Calibration/colibri')
+                self.image/=vignetting
+            
+            if self.darkCurrent:
+                #if self.config['verbose'] == 'True': print ("Add dark current")
+                print ("\tAdd dark current")
+                self.applyDarkCurrent()
+
+            if self.background:
+                #if self.config['verbose'] == 'True': print ("Add Sky background")
+                print ("\tAdd Sky background")
+                self.applyRampSkyBackground()
+
+            if self.cosmicRays:
+                #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
+                print ("\tAdd cosmic Rays")
+                self.addCosmicRays()
+
+            if self.nonlinearity:
+                #if self.config['verbose'] == 'True': print ("Add non linearity")
+                print ("\tAdd non linearity")
+                self.applyNonLinearity()
+                
+            if self.ADU:
+                #if self.config['verbose'] == 'True': print ("electrons2adu")
+                print ("\telectrons2adu")
+                self.electrons2ADU()
+                
+            if self.intscale: 
+                #if self.config['verbose'] == 'True': print ("Discretise")
+                print ("\tDiscretise")
+                self.discretise()
+                
+            if self.Vignetting:
+                #if self.config['verbose'] == 'True': print ("Add Vignetting")
+                print ("\tAdd Vignetting")
+                self.applyVignetting()
+            
+            #if self.config['verbose'] == 'True': print ("Write outputs")
+            print ("\tWrite outputs")
+            self.writeOutputs()
+            
+            tabImages.append(self.image)
+            
+            if self.readoutNoise:
+                #if self.config['verbose'] == 'True': print ("Add Readout Noise")
+                print ("\tAdd Readout Noise")
+                self.applyReadoutNoise()
+               
 
 
 if __name__ == '__main__':
