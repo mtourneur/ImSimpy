@@ -90,7 +90,7 @@
 ########### IMAGE SIMULATOR #####################
 
 #name of the output file
-"output" : Calibration/colibri/Flat.fits
+"output" : Calibration/colibri/Bias.fits
 
 
 #Control flags (can be yes/no, true/false, 1/0)
