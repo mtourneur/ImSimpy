@@ -105,6 +105,15 @@ class ImageSimulator():
         self.config['bits']=etc_info.information['cameras'][etc_info.information['channel']]['bits']
         self.config['xsize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_X']
         self.config['ysize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_Y']
+        self.config['c1']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c2']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c3']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c4']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c5']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c6']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c7']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c8']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
+        self.config['c9']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
         self.config['xPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeX']*etc_info.information['binning_X']
         self.config['yPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeY']*etc_info.information['binning_Y']
         self.config['dig_noise']=etc_info.information['dig_noise']
@@ -147,7 +156,7 @@ class ImageSimulator():
             self.information['ysize']=self.information['ImageResized'][1]
 
         #name of the output file, include CCDs
-        #self.information['output'] = '{%s}'.format(self.infor)
+        #self.information['output']=self.configfile[68:len(self.configfile)-6] + ".fits"
 
         #booleans to control the flow
         if self.config['shotNoise'].lower() == 'yes': self.shotNoise = True
@@ -211,6 +220,12 @@ class ImageSimulator():
         except:
             self.ADU = False
         try:
+            val=self.config['interpixCrosstalk']
+            if val.lower() == 'yes': self.interpixCrosstalk = True
+            else: self.interpixCrosstalk = False
+        except:
+            self.interpixCrosstalk = True
+        try:
             val=self.config['Offset']
             if val.lower() == 'yes': self.Offset = True
             else: self.Offset = False
@@ -238,6 +253,7 @@ class ImageSimulator():
                              nonLinearity=self.nonlinearity,
                              Vignetting=self.Vignetting,
                              ADU=self.ADU,
+                             interpixCrosstalk=self.interpixCrosstalk,
                              Offset=self.Offset,
                              intscale=self.intscale,
                              shutterOpen=self.shutterOpen)
@@ -339,8 +355,13 @@ class ImageSimulator():
         """
         Creates and empty array of a given x and y size full of zeros.
         """
-        self.image = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
-
+        self.image_total = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
+       
+        #reference pixel case management
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
+            self.image = self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+        else:
+            self.image = self.image_total
 
 
     def objectOnDetector(self, object):
@@ -945,7 +966,7 @@ class ImageSimulator():
 
     def applyVignetting(self):
         """ Add vignetting  """
-        vignetting=fits.getdata(self.path+'/data/Vignetting/'+self.information['VignettingFile'])
+        vignetting=fits.getdata(self.path+'/data/Vignetting/Calibration/colibri')
         self.image*=vignetting
 
 
@@ -956,16 +977,18 @@ class ImageSimulator():
 
     def applyDarkCurrent(self):
         """
-        Apply dark current. Scales the dark with the exposure time.
-
+        Apply dark current. Scales the dark with the exposure time. Apply on reference pixel.
         """
         filename_DC=self.path+'/data/DarkCurrent/'+'DarkCurrent_'+self.information['camera']+'.fits'
         DarkCurrent(filename=filename_DC,Type='gaussian',mean=self.information['DC'],xsize=self.information['xsize'],ysize=self.information['ysize'],texp=self.information['exptime'])
 
         DC=fits.getdata(filename_DC)
-        #add dark to image
-        self.image+=DC
-
+        
+        #add dark current to the image and reference pixels if there are any.
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
+            self.image+=DC
+        else:
+            self.image_total+=DC
 
 
     def applySkyBackground(self):
@@ -983,6 +1006,18 @@ class ImageSimulator():
         #bcgr = self.information['exptime'] * self.information['cosmic_bkgd']
         bcgr = self.information['exptime'] * sky_back_el
         #self.image += bcgr + np.sqrt(np.random.poisson(bcgr),size=self.image.shape)
+        sky_image = np.random.poisson(bcgr,size=self.image.shape).astype(np.float64)
+        self.image += sky_image
+        
+        
+    def applyRampSkyBackground(self):
+        """
+        Apply dark the sky background for a ramp. Scales the background with the exposure time.
+
+        Additionally saves the image without noise to a FITS file.
+        """
+        sky_back_el=self.information['Sky_CountRate']
+        bcgr = 1.475 * sky_back_el
         sky_image = np.random.poisson(bcgr,size=self.image.shape).astype(np.float64)
         self.image += sky_image
 
@@ -1093,6 +1128,18 @@ class ImageSimulator():
                         sum += overload
 
 
+    def applyInterpixCrosstalk(self):
+        """
+        Apply interpixel crosstalk coefficients to the image with a convolution
+        """
+        ICTcoeff = np.array([[self.information['c1'], self.information['c2'],self.information['c3']],[self.information['c4'],self.information['c5'],self.information['c6']],[self.information['c7'],self.information['c8'],self.information['c9']]])
+        #add dark to image and reference pixels
+        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
+            self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+        else:
+            self.image_total = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+
+
     def discretise(self):
         """
         Converts a floating point image array (self.image) to an integer array with max values
@@ -1109,6 +1156,7 @@ class ImageSimulator():
         self.image[self.image > max] = max
 
         self.image = np.rint(self.image).astype(np.int)
+
 
     def writeOutputs(self):
         """
@@ -1146,7 +1194,9 @@ class ImageSimulator():
         """
         #if self.config['verbose'] == 'True': print ("Read config file and execute ETC")
         print ("Read config file and execute ETC")
+        #self.information['output']=
         self.configure(config_type)
+        self.information['output']=self.nom + ".fits"
         print ("Building image: %s:" % self.information['output'])
         #print (self.information)
         if self.addsources:
@@ -1225,6 +1275,11 @@ class ImageSimulator():
             print ("\telectrons2adu")
             self.electrons2ADU()
 
+        if self.interpixCrosstalk:
+            #if self.config['verbose'] == 'True': print ("Apply Interpixel Crosstalk")
+            print ("\tApply Interpixel Crosstalk")
+            self.applyInterpixCrosstalk()
+
         if self.Offset:
             #if self.config['verbose'] == 'True': print ("Add offset")
             print ("\tAdd offset")
@@ -1238,7 +1293,104 @@ class ImageSimulator():
         #if self.config['verbose'] == 'True': print ("Write outputs")
         print ("\tWrite outputs")
         self.writeOutputs()
+        
+       
+        
+    def Rampsimulation(self,config_type='file' ):
+        #nImage, output_dir,band
+        """
+        Create a ramp simulated images defined by the configuration file.
+        Will do all steps defined in the config file sequentially.
 
+        :return: None
+        """
+        time=0
+        self.config['exptime'] = time
+
+        # Set input catalogue of sources
+        #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
+        self.nom = '/'+ self.output_dir + '/Reset'
+        
+        self.simulate('data') 
+        
+        tabImages=[self.image]
+        """
+        if self.readoutNoise:  #Vérifier qu'il n'est pas appliqué à tabImages[self.image]
+            #if self.config['verbose'] == 'True': print ("Add Readout Noise")
+            print ("\tAdd Readout Noise")
+            self.applyReadoutNoise()
+        """
+        for i in range(1,self.nbImages+1):
+            
+            time = i * 1.475
+            # Set the exposure time
+            self.config['exptime'] = time
+
+            # Set input catalogue of sources
+            #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
+            
+            #if self.config['verbose'] == 'True': print ("Read config file and execute ETC")
+            print ("Read config file and execute ETC")
+            self.configure(config_type)            
+                        
+            # Set name of output fits file
+            self.information['output']='%s/image_%s_%s.fits' % (self.output_dir,self.config['filter_band'],i)
+            print ("Building image nb %s: %s:" % (i,self.information['output']))
+            
+            self.image+=tabImages[i-1]
+            
+            # If there is vignetting, I have 
+            if self.Vignetting:
+                #if self.config['verbose'] == 'True': print ("Add Vignetting")
+                vignetting=fits.getdata(self.path+'/data/Vignetting/Calibration/colibri')
+                self.image/=vignetting
+            
+            if self.darkCurrent:
+                #if self.config['verbose'] == 'True': print ("Add dark current")
+                print ("\tAdd dark current")
+                self.applyDarkCurrent()
+
+            if self.background:
+                #if self.config['verbose'] == 'True': print ("Add Sky background")
+                print ("\tAdd Sky background")
+                self.applyRampSkyBackground()
+
+            if self.cosmicRays:
+                #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
+                print ("\tAdd cosmic Rays")
+                self.addCosmicRays()
+
+            if self.nonlinearity:
+                #if self.config['verbose'] == 'True': print ("Add non linearity")
+                print ("\tAdd non linearity")
+                self.applyNonLinearity()
+                
+            if self.ADU:
+                #if self.config['verbose'] == 'True': print ("electrons2adu")
+                print ("\telectrons2adu")
+                self.electrons2ADU()
+                
+            if self.intscale: 
+                #if self.config['verbose'] == 'True': print ("Discretise")
+                print ("\tDiscretise")
+                self.discretise()
+                
+            if self.Vignetting:
+                #if self.config['verbose'] == 'True': print ("Add Vignetting")
+                print ("\tAdd Vignetting")
+                self.applyVignetting()
+            
+            #if self.config['verbose'] == 'True': print ("Write outputs")
+            print ("\tWrite outputs")
+            self.writeOutputs()
+            
+            tabImages.append(self.image)
+            
+            if self.readoutNoise:
+                #if self.config['verbose'] == 'True': print ("Add Readout Noise")
+                print ("\tAdd Readout Noise")
+                self.applyReadoutNoise()
+               
 
 
 if __name__ == '__main__':

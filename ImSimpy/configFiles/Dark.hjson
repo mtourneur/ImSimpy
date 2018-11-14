@@ -89,7 +89,7 @@
 ########### IMAGE SIMULATOR #####################
 
 #name of the output file
-"output" : Calibration/colibri/Flat.fits
+"output" : Calibration/colibri/Dark.fits
 
 
 #Control flags (can be yes/no, true/false, 1/0)
@@ -111,6 +111,9 @@
 # ---- Optional ones -----
 #add sky background?
 "background" : no
+
+#apply interpixel crosstalk?
+"interpixCrosstalk" : yes
 
 #apply bleeding effect?
 "bleeding" : yes
