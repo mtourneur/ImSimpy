@@ -156,7 +156,7 @@
 "shotNoise" : yes
 
 #add cosmetics?
-"cosmetics" : yes
+"cosmetics" : no
 "DeadPixFile" : Make_one_image/DeadPixs_nir.fits
 "HotPixFile" : Make_one_image/HotPixs_nir.fits
 
@@ -169,6 +169,12 @@
 
 #apply interpixel crosstalk?
 "interpixCrosstalk" : yes
+
+#apply non linearity? (adu/sec)
+"nonLinearity" : no
+"nonLinearity_A0" : coeff0.fits
+"nonLinearity_A1" : coeff1.fits
+"nonLinearity_A2" : coeff2.fits
 
 #apply bleeding effect?
 "bleeding": no
@@ -184,14 +190,17 @@
 
 #convert to ADU
 "ADU": yes
-"GainMapFile": Make_one_image/Gain_nir.fits
+"GainMapFile": gainConv1,3.fits
 
 #Flat
-"Vignetting": yes
-"VignettingFile": Make_one_image/Vignetting_nir.fits
+"Vignetting": no
+"VignettingFile": Vignetting_nir.fits
 
 #Offset
 "Offset": yes
-"OffsetFile": Make_one_image/Offset_nir.fits
+"OffsetFile": coeff0.fits
 
+#Instrument intrinsic noise
+"instrumIntrinsicNoise" : yes
+"instrumIntrinsicNoiseFile" : coeff1.fits
 } 

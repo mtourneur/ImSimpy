@@ -115,6 +115,12 @@
 #apply interpixel crosstalk?
 "interpixCrosstalk" : yes
 
+#apply non linearity? (adu/sec)
+"nonLinearity" : yes
+"nonLinearity_A0" : "coeff0.fits"
+"nonLinearity_A1" : "coeff1.fits"
+"nonLinearity_A2" : "coeff2.fits"
+
 #apply bleeding effect?
 "bleeding" : yes
 
