@@ -101,7 +101,7 @@
 "shotNoise" : no
 
 #add cosmetics?
-"cosmetics" : yes
+"cosmetics" : no
 "DeadPixFile" : Calibration/colibri/DeadPixs_nir.fits
 "HotPixFile" : Calibration/colibri/HotPixs_nir.fits
 
@@ -117,12 +117,12 @@
 
 #apply non linearity? (adu/sec)
 "nonLinearity" : yes
-"nonLinearity_A0" : "coeff0.fits"
-"nonLinearity_A1" : "coeff1.fits"
-"nonLinearity_A2" : "coeff2.fits"
+"nonLinearity_A0" : "2018-03-30-09-12-01-Linearite-HxRG_Gain13_v3-saturation-CoeffA0.fits"
+"nonLinearity_A1" : "2018-03-30-09-12-01-Linearite-HxRG_Gain13_v3-saturation-CoeffA1.fits"
+"nonLinearity_A2" : "2018-03-30-09-12-01-Linearite-HxRG_Gain13_v3-saturation-CoeffA2.fits"
 
 #apply bleeding effect?
-"bleeding" : yes
+"bleeding" : no
 
 #add readout time?
 "readoutNoise": yes
@@ -135,7 +135,7 @@
 
 #convert to ADU
 "ADU": yes
-"GainMapFile": Gain_nir.fits
+"GainMapFile": gainConv1,3.fits
 
 #Flat
 "Vignetting": no
@@ -143,6 +143,9 @@
 
 #Offset
 "Offset": yes
-"OffsetFile": Calibration/colibri/Offset_nir.fits
+"OffsetFile": 2018-03-30-09-12-01-Linearite-HxRG_Gain13_v3-saturation-CoeffA0.FITS
 
+#Instrument intrinsic noise
+"instrumIntrinsicNoise" : yes
+"instrumIntrinsicNoiseFile" : 2018-03-30-09-12-01-Linearite-HxRG_Gain13_v3-saturation-CoeffA1.fits
 } 
