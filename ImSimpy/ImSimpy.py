@@ -34,7 +34,7 @@ class ImageSimulator():
 
     """
 
-    def __init__(self, path=os.getenv('ImSimpy_DIR')+'/ImSimpy',configFile=os.getenv('ImSimpy_DIR')+'/ImSimpy/configFiles/default_input.hjson',name_telescope='default',seed=None, debug=False,random=False):
+    def __init__(self, path=os.getenv('ImSimpy_DIR')+'\\ImSimpy',configFile=os.getenv('ImSimpy_DIR')+'/ImSimpy/configFiles/default_input.hjson',name_telescope='default',seed=None, debug=False,random=False):
         """
         Class Constructor.
 
@@ -105,15 +105,17 @@ class ImageSimulator():
         self.config['bits']=etc_info.information['cameras'][etc_info.information['channel']]['bits']
         self.config['xsize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_X']
         self.config['ysize']=etc_info.information['cameras'][etc_info.information['channel']]['Nphotocell_Y']
+        self.config['NrefPix_x']=etc_info.information['cameras'][etc_info.information['channel']]['NrefPix_x']
+        self.config['NrefPix_y']=etc_info.information['cameras'][etc_info.information['channel']]['NrefPix_y']
         self.config['c1']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
         self.config['c2']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
-        self.config['c3']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
-        self.config['c4']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
-        self.config['c5']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
-        self.config['c6']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
-        self.config['c7']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
-        self.config['c8']=etc_info.information['cameras'][etc_info.information['channel']]['c2']
-        self.config['c9']=etc_info.information['cameras'][etc_info.information['channel']]['c1']
+        self.config['c3']=etc_info.information['cameras'][etc_info.information['channel']]['c3']
+        self.config['c4']=etc_info.information['cameras'][etc_info.information['channel']]['c4']
+        self.config['c5']=etc_info.information['cameras'][etc_info.information['channel']]['c5']
+        self.config['c6']=etc_info.information['cameras'][etc_info.information['channel']]['c6']
+        self.config['c7']=etc_info.information['cameras'][etc_info.information['channel']]['c7']
+        self.config['c8']=etc_info.information['cameras'][etc_info.information['channel']]['c8']
+        self.config['c9']=etc_info.information['cameras'][etc_info.information['channel']]['c9']
         self.config['xPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeX']*etc_info.information['binning_X']
         self.config['yPixSize']=etc_info.information['cameras'][etc_info.information['channel']]['Photocell_SizeY']*etc_info.information['binning_Y']
         self.config['dig_noise']=etc_info.information['dig_noise']
@@ -190,6 +192,18 @@ class ImageSimulator():
         except:
             self.darkCurrent = False
         try:
+            val=self.config['persistance']
+            if val.lower() == 'yes': self.persistance = True
+            else: self.persistance = False
+        except:
+            self.persistance = False
+        try:
+            val=self.config['instrumIntrinsicNoise']
+            if val.lower() == 'yes': self.instrumIntrinsicNoise = True
+            else: self.instrumIntrinsicNoise = False
+        except:
+            self.instrumIntrinsicNoise = False
+        try:
             val=self.config['background']
             if val.lower() == 'yes': self.background = True
             else: self.background = False
@@ -202,11 +216,11 @@ class ImageSimulator():
         except:
             self.shutterOpen = False
         try:
-            val=self.config['nonlinearity']
-            if val.lower() == 'yes': self.nonlinearity = True
-            else: self.nonlinearity = False
+            val=self.config['nonLinearity']
+            if val.lower() == 'yes': self.nonLinearity = True
+            else: self.nonLinearity = False
         except:
-            self.nonlinearity = False
+            self.nonLinearity = False
         try:
             val=self.config['Vignetting']
             if val.lower() == 'yes': self.Vignetting = True
@@ -250,10 +264,12 @@ class ImageSimulator():
                              darkCurrent=self.darkCurrent,
                              readoutNoise=self.readoutNoise,
                              digiNoise=self.digiNoise,
-                             nonLinearity=self.nonlinearity,
+                             nonLinearity=self.nonLinearity,
                              Vignetting=self.Vignetting,
                              ADU=self.ADU,
                              interpixCrosstalk=self.interpixCrosstalk,
+                             persistance=self.persistance,
+                             instrumIntrinsicNoise=self.instrumIntrinsicNoise,
                              Offset=self.Offset,
                              intscale=self.intscale,
                              shutterOpen=self.shutterOpen)
@@ -264,8 +280,18 @@ class ImageSimulator():
         
     def set_fits_header(self):
        """ Save information to save in FITS file header """
-
+       from astropy.time import Time
+       import datetime
+       
        self.fits_header = OrderedDict()
+       self.fits_header['FASTMODE'] = 0
+       self.fits_header['NEXTRAP'] = 0
+       self.fits_header['NEXTRAL'] = 0
+       self.fits_header['REFOUT'] = 0
+       self.fits_header['REFPIXEL'] = 0
+       self.fits_header['ACQTIME'] = Time(datetime.datetime.now(), format='datetime', scale='utc').jd
+       self.fits_header['ACQTIME1'] = str(datetime.datetime.now())
+       self.fits_header['xsize'] = self.information['xsize']
        self.fits_header['xsize'] = self.information['xsize']
        self.fits_header['ysize'] = self.information['ysize']
        self.fits_header['FWC'] = self.information['FWC']
@@ -290,6 +316,10 @@ class ImageSimulator():
        self.fits_header['D_M1'] = self.information['D_M1']
        self.fits_header['D_M2'] = self.information['D_M2']
        self.fits_header['M2_factor'] = self.information['M2_factor']
+       if self.acquisition=='ramp' : 
+           self.fits_header['GROUP'] = self.nbGroup
+           self.fits_header['READ'] = self.nbRead
+           self.fits_header['DROP'] = self.nbDrop
 
        # add WCS to the header
        self.fits_header['WCSAXES'] = 2
@@ -358,7 +388,7 @@ class ImageSimulator():
         self.image_total = np.zeros((self.information['ysize'], self.information['xsize']), dtype=np.float64)
        
         #reference pixel case management
-        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
             self.image = self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
         else:
             self.image = self.image_total
@@ -972,23 +1002,36 @@ class ImageSimulator():
 
     def applyNonLinearity(self):
         """ Add non linearity  """
-        pass
+        import copy
+        A1=fits.getdata(self.path+'\\data\\NonLinearity\\'+self.information['nonLinearity_A1'])
+        A2=fits.getdata(self.path+'\\data\\NonLinearity\\'+self.information['nonLinearity_A2'])
+        gain_conv=fits.getdata(self.path+'/data/GainMap/'+self.information['GainMapFile'])
 
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            A1 = A1[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+            A2 = A2[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+            gain_conv = gain_conv[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+        A2[A2 > 0.0]=0.0
+        A1[A1==0.0]=0.01
+        
+        image=copy.deepcopy(self.image)
+        self.image+=A2/((A1**2)*gain_conv)*image**2
+        
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]=self.image
+
+        
 
     def applyDarkCurrent(self):
         """
         Apply dark current. Scales the dark with the exposure time. Apply on reference pixel.
         """
-        filename_DC=self.path+'/data/DarkCurrent/'+'DarkCurrent_'+self.information['camera']+'.fits'
+        filename_DC=self.path+'\\data\\DarkCurrent\\'+'DarkCurrent_'+self.information['camera']+'.fits'
         DarkCurrent(filename=filename_DC,Type='gaussian',mean=self.information['DC'],xsize=self.information['xsize'],ysize=self.information['ysize'],texp=self.information['exptime'])
 
         DC=fits.getdata(filename_DC)
-        
-        #add dark current to the image and reference pixels if there are any.
-        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
-            self.image+=DC
-        else:
-            self.image_total+=DC
+
+        self.image_total+=DC
 
 
     def applySkyBackground(self):
@@ -1040,15 +1083,15 @@ class ImageSimulator():
         The noise is drawn from a Normal (Gaussian) distribution with average=0.0 and std=readout noise.
         """
 
-        #noise = np.random.normal(loc=0.0, scale=self.information['RN'], size=self.image.shape)
-        noise = np.random.poisson(self.information['RN'], size=self.image.shape)
-
-
-        # Can not be negative
-        noise[noise < 0.0] = 0.0
+        noise = np.random.normal(loc=0.0, scale=self.information['RN'], size=self.image.shape)
+        #noise = np.random.poisson(loc=0.0,scale=self.information['RN'], size=self.image.shape)
 
         #add to the image
         self.image += noise
+        
+        # Replace self.image in self.image_total
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]=self.image
 
 
     def applyDigiNoise(self):
@@ -1071,9 +1114,12 @@ class ImageSimulator():
         Convert from electrons to ADUs using the value read from the configuration file.
         """
         gain_map=fits.getdata(self.path+'/data/GainMap/'+self.information['GainMapFile'])
- 
-        self.image /= gain_map
-
+        
+        self.image_total /= gain_map
+        
+        # Replace self.image in self.image_total
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            self.image=self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
 
 
     def addOffset(self):
@@ -1081,7 +1127,12 @@ class ImageSimulator():
         Add the offset (bias) in ADU
         """
         offset=fits.getdata(self.path+'/data/Offset/'+self.information['OffsetFile'])
-        self.image+=offset
+        gain_conv=fits.getdata(self.path+'/data/GainMap/'+self.information['GainMapFile'])
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            offset = offset[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+            gain_conv=gain_conv[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+        
+        self.image+=offset*gain_conv
 
     
     def applyBleeding(self):
@@ -1132,12 +1183,38 @@ class ImageSimulator():
         """
         Apply interpixel crosstalk coefficients to the image with a convolution
         """
+        import copy
         ICTcoeff = np.array([[self.information['c1'], self.information['c2'],self.information['c3']],[self.information['c4'],self.information['c5'],self.information['c6']],[self.information['c7'],self.information['c8'],self.information['c9']]])
-        #add dark to image and reference pixels
-        if 'NrefPix_x' in self.information and 'NrefPix_y' in self.information :
-            self.image = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
-        else:
-            self.image_total = ndimage.convolve(self.image, ICTcoeff, mode='constant', cval=0.0)
+        
+        # apply coefficients to the image
+        copie=np.float32(copy.deepcopy(self.image))
+        convolve = ndimage.convolve(copie, ICTcoeff, mode='constant', cval=0.0)   
+        self.image = copy.deepcopy(convolve)    
+        
+        # Replace self.image in self.image_total
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            self.image_total[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]=self.image
+        else :
+            self.image_total=self.image
+
+        
+    def applyInstrumIntrinsicNoise(self) :
+        """
+        Apply the instrument intrinsic noise
+        """
+        instrumIntrinsicNoise=fits.getdata(self.path+'/data/IntrinsicNoise/'+self.information['instrumIntrinsicNoiseFile'])
+        gain_conv=fits.getdata(self.path+'/data/GainMap/'+self.information['GainMapFile'])
+        #reference pixel case management
+        if 'NrefPix_x' in self.config and 'NrefPix_y' in self.config :
+            instrumIntrinsicNoise = instrumIntrinsicNoise[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+            gain_conv=gain_conv[self.information['NrefPix_x']:-self.information['NrefPix_x'], self.information['NrefPix_y']:-self.information['NrefPix_y']]
+        
+        self.image+=instrumIntrinsicNoise*self.config['exptime']*gain_conv
+
+    
+    def applyPersistance(self):
+        """Apply persistance"""
+        pass
 
 
     def discretise(self):
@@ -1178,7 +1255,7 @@ class ImageSimulator():
         #float 32 bits
         #hdu['PRIMARY'].data=self.image.astype(np.float32)
         # UNsigned Integer 16 bits (0 to 65535)
-        hdu.data=self.image.astype(np.uint16)
+        hdu.data=self.image_total.astype(np.uint16)
         hdu.header=self.hdu_header
 
         #write the actual file. Path should exists, already checked while creating the headers.
@@ -1199,6 +1276,12 @@ class ImageSimulator():
         self.information['output']=self.nom + ".fits"
         print ("Building image: %s:" % self.information['output'])
         #print (self.information)
+               
+        if self.Offset:
+            #if self.config['verbose'] == 'True': print ("Add Offset")
+            print ("\tAdd Offset")
+            self.addOffset()
+        
         if self.addsources:
             #if self.config['verbose'] == 'True': print ("Read objecct list")
             print ("\tGENERATE OBJECTS CATALOG")
@@ -1215,16 +1298,6 @@ class ImageSimulator():
             print ("\tADD OBJECTS")
             self.addObjects()
 
-        if self.shotNoise:
-            #if self.config['verbose'] == 'True': print ("Apply Shot noise")
-            print ("\tApply Shot noise")
-            self.applyShotNoise()
-
-        if self.darkCurrent:
-            #if self.config['verbose'] == 'True': print ("Add dark current")
-            print ("\tAdd dark current")
-            self.applyDarkCurrent()
-
         if self.background:
             #if self.config['verbose'] == 'True': print ("Add Sky background")
             print ("\tAdd Sky background")
@@ -1235,15 +1308,35 @@ class ImageSimulator():
             print ("\tAdd Vignetting")
             self.applyVignetting()
 
+        if self.cosmicRays:
+            #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
+            print ("\tAdd cosmic Rays")
+            self.addCosmicRays()
+        """ N'apparait pas, voir tuto
+        if self.shotNoise:
+            #if self.config['verbose'] == 'True': print ("Apply Shot noise")
+            print ("\tApply Shot noise")
+            self.applyShotNoise()
+        """
+        if self.darkCurrent:
+            #if self.config['verbose'] == 'True': print ("Add dark current")
+            print ("\tAdd dark current")
+            self.applyDarkCurrent()
+
+        if self.interpixCrosstalk:
+            #if self.config['verbose'] == 'True': print ("Apply Interpixel Crosstalk")
+            print ("\tApply Interpixel Crosstalk")
+            self.applyInterpixCrosstalk()
+
         if self.cosmetics:
             #if self.config['verbose'] == 'True': print ("Add cosmetics")
             print ("\tAdd cosmetics")
             self.addCosmetics()
 
-        if self.cosmicRays:
-            #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
-            print ("\tAdd cosmic Rays")
-            self.addCosmicRays()
+        if self.nonLinearity:
+            #if self.config['verbose'] == 'True': print ("Add non linearity")
+            print ("\tAdd non linearity")
+            self.applyNonLinearity()
 
         if self.shutterOpen:
             #if self.config['verbose'] == 'True': print ("Shutter")
@@ -1259,31 +1352,16 @@ class ImageSimulator():
             #if self.config['verbose'] == 'True': print ("Add Readout Noise")
             print ("\tAdd Readout Noise")
             self.applyReadoutNoise()
-
+        """ n'apparait pas, voir tuto, et placer normalement entre ICT et cosmetique
         if self.digiNoise:
             #if self.config['verbose'] == 'True': print ("Add Digitisation Noise")
             print ("\tAdd Digitisation Noise")
             self.applyDigiNoise()
-
-        if self.nonlinearity:
-            #if self.config['verbose'] == 'True': print ("Add non linearity")
-            print ("\tAdd non linearity")
-            self.applyNonLinearity()
-
+        """
         if self.ADU:
             #if self.config['verbose'] == 'True': print ("electrons2adu")
             print ("\telectrons2adu")
             self.electrons2ADU()
-
-        if self.interpixCrosstalk:
-            #if self.config['verbose'] == 'True': print ("Apply Interpixel Crosstalk")
-            print ("\tApply Interpixel Crosstalk")
-            self.applyInterpixCrosstalk()
-
-        if self.Offset:
-            #if self.config['verbose'] == 'True': print ("Add offset")
-            print ("\tAdd offset")
-            self.addOffset()
 
         if self.intscale: 
             #if self.config['verbose'] == 'True': print ("Discretise")
@@ -1304,93 +1382,184 @@ class ImageSimulator():
 
         :return: None
         """
-        time=0
-        self.config['exptime'] = time
-
-        # Set input catalogue of sources
-        #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
-        self.nom = '/'+ self.output_dir + '/Reset'
+        import copy
         
-        self.simulate('data') 
-        
-        tabImages=[self.image]
-        """
-        if self.readoutNoise:  #Vérifier qu'il n'est pas appliqué à tabImages[self.image]
-            #if self.config['verbose'] == 'True': print ("Add Readout Noise")
-            print ("\tAdd Readout Noise")
-            self.applyReadoutNoise()
-        """
-        for i in range(1,self.nbImages+1):
+        for i in range(self.nbGroup*self.nbRead):
             
-            time = i * 1.475
-            # Set the exposure time
-            self.config['exptime'] = time
+            # Calcul de la valeur du group et du read pour l'image i
+            Group = int(i/self.nbRead)+ 1
+            Read = i+1 - self.nbRead*(Group-1)
+            
+            time= (self.nbRead+self.nbDrop)*(Group-1) + Read
+            self.config['exptime'] = time * 1.47528
+      
+            # Création de l'image vide 
+            print ("Read config file and execute ETC")       
+            self.configure(config_type)  
 
-            # Set input catalogue of sources
-            #self.information['SourcesList']['file']="%s/SourcesCatalog_%s.txt" % (self.output_dir,self.bands)
-            
-            #if self.config['verbose'] == 'True': print ("Read config file and execute ETC")
-            print ("Read config file and execute ETC")
-            self.configure(config_type)            
-                        
             # Set name of output fits file
-            self.information['output']='%s/image_%s_%s.fits' % (self.output_dir,self.config['filter_band'],i)
-            print ("Building image nb %s: %s:" % (i,self.information['output']))
-            
-            self.image+=tabImages[i-1]
-            
-            # If there is vignetting, I have 
-            if self.Vignetting:
-                #if self.config['verbose'] == 'True': print ("Add Vignetting")
-                vignetting=fits.getdata(self.path+'/data/Vignetting/Calibration/colibri')
-                self.image/=vignetting
-            
-            if self.darkCurrent:
-                #if self.config['verbose'] == 'True': print ("Add dark current")
-                print ("\tAdd dark current")
-                self.applyDarkCurrent()
+            if self.acquisition=='ramp':
+                self.information['output']='%s/image_%s_M%s_N%s.fits' % (self.output_dir,self.config['filter_band'],Group,Read)
+            elif self.acquisition=='CDS' and self.number==1:
+                self.information['output']='%s/image_%s_M1_N%s.fits' % (self.output_dir,self.config['filter_band'],Read)
+            elif self.acquisition=='CDS' and self.number==2:
+                self.information['output']='%s/image_%s_M2_N%s.fits' % (self.output_dir,self.config['filter_band'],Read)
+            print ("Building image nb %s: %s:" % (i+1,self.information['output']))                     
+                        
+            # Set the time between 2 images            
+            if Read == 1 and Group != 1 :
+                # In this case, if nbDrop!= 0, the time between 2 images is not the exposure time
+                self.config['exptime']=1.47528*(self.nbDrop+1)
+            else :
+                self.config['exptime']=1.47528
+                
+            # Put the offset or the signal of the n-1 image
+            if Read == 1 and Group == 1 : 
+                if self.Offset:
+                    print ("\tAdd Offset")
+                    self.addOffset() 
+            else :
+                self.image_total+=tabImages[i-1]
+ 
+             
+            # Signal ext : ciel + télescope
+            if self.addsources:
+                #if self.config['verbose'] == 'True': print ("Read objecct list")
+                print ("\tGENERATE OBJECTS CATALOG")
+                self.generateObjectList()
+                self.readObjectlist()
+                
+                #if self.config['verbose'] == 'True': print ("Generate PSF")
+                print ("\tGENERATE PSF")
+                self.generatePSF()
+                self.readPSFs()
+                self.generateFinemaps()
+       
+                #if self.config['verbose'] == 'True': print ("Add objects")
+                print ("\tADD OBJECTS")
+                self.addObjects()
 
             if self.background:
                 #if self.config['verbose'] == 'True': print ("Add Sky background")
                 print ("\tAdd Sky background")
-                self.applyRampSkyBackground()
-
-            if self.cosmicRays:
-                #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
-                print ("\tAdd cosmic Rays")
-                self.addCosmicRays()
-
-            if self.nonlinearity:
-                #if self.config['verbose'] == 'True': print ("Add non linearity")
-                print ("\tAdd non linearity")
-                self.applyNonLinearity()
-                
-            if self.ADU:
-                #if self.config['verbose'] == 'True': print ("electrons2adu")
-                print ("\telectrons2adu")
-                self.electrons2ADU()
-                
-            if self.intscale: 
-                #if self.config['verbose'] == 'True': print ("Discretise")
-                print ("\tDiscretise")
-                self.discretise()
+                self.applySkyBackground()
                 
             if self.Vignetting:
                 #if self.config['verbose'] == 'True': print ("Add Vignetting")
                 print ("\tAdd Vignetting")
                 self.applyVignetting()
+                    
+            if self.cosmicRays:
+                #if self.config['verbose'] == 'True': print ("Add cosmic Rays")
+                print ("\tAdd cosmic Rays")
+                self.addCosmicRays()
+              
+            # Signal interne : instrument
+            if self.persistance:
+                #if self.config['verbose'] == 'True': print ("Add dark current")
+                print ("\tApply Persistance")
+                self.applyPersistance()
+                
+            if self.instrumIntrinsicNoise:
+                #if self.config['verbose'] == 'True': print ("Add dark current")
+                print ("\tApply instrument intrinsic noise")
+                self.applyInstrumIntrinsicNoise()
             
-            #if self.config['verbose'] == 'True': print ("Write outputs")
-            print ("\tWrite outputs")
-            self.writeOutputs()
+            if self.darkCurrent:
+                #if self.config['verbose'] == 'True': print ("Add dark current")
+                print ("\tAdd dark current")
+                self.applyDarkCurrent()
             
-            tabImages.append(self.image)
+             
+            copie = copy.deepcopy(self.image_total)
+            if Read==1 and Group ==1 :
+                tabImages=[copie]
+            else :
+                tabImages.append(copie)
             
+            
+            # Statistique
+            if self.interpixCrosstalk:
+                #if self.config['verbose'] == 'True': print ("Apply Interpixel Crosstalk")
+                print ("\tApply Interpixel Crosstalk")
+                self.applyInterpixCrosstalk()
+               
+            """ N'apparait pas, voir tuto
+            if self.shotNoise:
+                #if self.config['verbose'] == 'True': print ("Apply Shot noise")
+                print ("\tApply Shot noise")
+                self.applyShotNoise()
+            """
+            
+            # Détecteur
+            if self.cosmetics:
+                #if self.config['verbose'] == 'True': print ("Add cosmetics")
+                print ("\tAdd cosmetics")
+                self.addCosmetics()
+           
+            if self.nonLinearity:
+                #if self.config['verbose'] == 'True': print ("Add non linearity")
+                print ("\tAdd non linearity")
+                self.applyNonLinearity()
+            
+            if self.shutterOpen:
+                #if self.config['verbose'] == 'True': print ("Shutter")
+                print ("\tShutter")
+                self.addReadoutTrails()
+            
+            if self.bleeding:
+                #if self.config['verbose'] == 'True': print("Apply Saturation")
+                print("\tApply Saturation")
+                self.applyBleeding()
+              
             if self.readoutNoise:
                 #if self.config['verbose'] == 'True': print ("Add Readout Noise")
                 print ("\tAdd Readout Noise")
                 self.applyReadoutNoise()
-               
+            
+            """ n'apparait pas, voir tuto, et placer normalement entre ICT et cosmetique
+            if self.digiNoise:
+                #if self.config['verbose'] == 'True': print ("Add Digitisation Noise")
+                print ("\tAdd Digitisation Noise")
+                self.applyDigiNoise()
+            """
+            if self.ADU:
+                #if self.config['verbose'] == 'True': print ("electrons2adu")
+                print ("\telectrons2adu")
+                self.electrons2ADU()
+            
+            if self.intscale: 
+                #if self.config['verbose'] == 'True': print ("Discretise")
+                print ("\tDiscretise")
+                self.discretise()
+            
+            #if self.config['verbose'] == 'True': print ("Write outputs")
+            print ("\tWrite outputs")
+            self.writeOutputs() 
+            
+
+        
+    def AcquisitionBruitCDS(self,config_type='file' ):
+        """ 
+        Créé l'image de bruit CDS
+        """
+        from math import sqrt
+        print("Building CDS image")
+        M1_N1=fits.getdata(self.path+'\\images\\AcquisitionBruitCDS\\image_%s_M1_N1.fits' % (self.config['filter_band']))
+        M1_N2=fits.getdata(self.path+'\\images\\AcquisitionBruitCDS\\image_%s_M1_N2.fits' % (self.config['filter_band']))
+        image1 = np.float32(M1_N2) - np.float32(M1_N1)
+        M2_N1=fits.getdata(self.path+'\\images\\AcquisitionBruitCDS\\image_%s_M2_N1.fits' % (self.config['filter_band']))
+        M2_N2=fits.getdata(self.path+'\\images\\AcquisitionBruitCDS\\image_%s_M2_N2.fits' % (self.config['filter_band']))
+        image2 = np.float32(M2_N2) - np.float32(M2_N1)
+        
+        gain_conv=fits.getdata(self.path+'/data/GainMap/'+self.information['GainMapFile'])
+    
+        CDSNoise = (image2 - image1)/sqrt(2)*gain_conv
+        hdu=fits.PrimaryHDU()
+        hdu.data=CDSNoise
+        hdu.writeto(self.path+'\\images\\AcquisitionBruitCDS\\CDSNoise.fits',overwrite=True)
+        
+        print("end")
 
 
 if __name__ == '__main__':
